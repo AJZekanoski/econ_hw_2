@@ -23,6 +23,7 @@ library(stargazer)
 ```
 
 ```{r}
+#read in data
 econ_abb <- read_csv("HW2_Data.csv")
 
 comp_x_a <- econ_abb %>%
@@ -160,3 +161,139 @@ ggplot(data = comp_x_d, aes(x = Abatement,
   labs(title = "Company D")
   
 ```
+
+```{r}
+coef.A <- as.numeric(comp_x_a_lm$coefficients) 
+a.A <- coef.A[2]
+b.A <- coef.A[1]
+current.emissions <- c(170, 200, 230, 300)
+```
+
+```{r}
+#make estimated values
+comp_x_a_i <- comp_x_a %>%
+  mutate(estimated = a.A*Abatement + b.A)
+```
+
+```{r}
+emissions <- seq(0,250,10)
+```
+
+```{r}
+mwtp_A <- a.A*(current.emissions[1] - emissions) + b.A
+mwtp_A_df <- tibble(emissions, mwtp_A)
+
+```
+
+```{r}
+mwtp_B <- a.B*sqrt((current.emissions[2] - emissions)) + b.B
+mwtp_B_df <- tibble(emissions, mwtp_B)
+```
+
+```{r}
+mwtp_C <- a.C*(current.emissions[3] - emissions) + b.C
+mwtp_C_df <- tibble(emissions, mwtp_C)
+```
+
+```{r}
+mwtp_D <- a.D*(current.emissions[4] - emissions) + c.D*(current.emissions[4] - emissions)^2 + b.D
+mwtp_D_df <- tibble(emissions, mwtp_D)
+```
+
+
+```{r}
+coef.B <- as.numeric(comp_x_b_poly$coefficients) 
+a.B <- coef.B[2]
+b.B <- coef.B[1]
+```
+
+```{r}
+coef.C <- as.numeric(comp_x_c_lm$coefficients) 
+a.C <- coef.C[2]
+b.C <- coef.C[1]
+```
+
+```{r}
+coef.D <- as.numeric(comp_x_d_poly$coefficients) 
+a.D <- coef.D[2]
+b.D <- coef.D[1]
+c.D <- coef.D[3]
+```
+
+
+
+```{r}
+comp_x_a_ii <- comp_x_a_i %>% 
+  mutate(mwtp = a.A*(current.emissions[1] - emissions) + b.A)
+```
+
+```{r}
+
+```
+
+```{r}
+mc_estimate <- econ_abb %>% 
+  mutate(lm_a = 1 + 0.513*Abatement) %>% 
+   mutate(lm_poly_b = -6.440 +5.577*Abatement^0.5) %>% 
+   mutate(lm_c = -26.81 + 1.13*Abatement) %>% 
+  mutate(lm_poly_d = 2.098529 +0.004088*Abatement^2) %>% 
+  select(Abatement, lm_a, lm_poly_b, lm_c, lm_poly_d)
+```
+
+
+```{r}
+ggplot(data = mc_estimate, aes(x = Abatement,
+                            y = lm_c, lm_a, lm_poly_b, lm_poly_d)) +
+  geom_line(data = mc_estimate, aes(x = Abatement,
+                                    y = lm_a),
+            color = "darkgreen")+
+  geom_line(data = mc_estimate, aes(x = Abatement,
+                                    y = lm_poly_b),
+            color = "darkblue")+
+  geom_line(data = mc_estimate, aes(x = Abatement,
+                                    y = lm_c),
+            color = "darkred")+
+  geom_line(data = mc_estimate, aes(x = Abatement,
+                                    y = lm_poly_d),
+            color = "darksalmon")+
+  theme_light() +
+  labs(title = "Marginal Cost Curves for Sectors A, B, C, D",
+       x = "Abatement (tons)",
+       y = "$/ton") +
+theme(plot.title = element_text(size = 14,
+                                  face = 4,
+        hjust = 0.5)) +
+  theme(axis.title.y = element_text(size = 12)) 
+```
+
+```{r}
+step1 <- merge(mwtp_A_df, mwtp_B_df, by = "emissions")
+step2 <- merge(step1, mwtp_C_df, by = "emissions")
+carbon_emissions_demandcurve <- merge(step2, mwtp_D_df, by = "emissions")
+```
+
+```{r}
+ggplot(data = carbon_emissions_demandcurve, aes(x = emissions,
+                            y = mwtp_A, mwtp_B, mwtp_C, mwtp_D)) +
+  geom_line(data = carbon_emissions_demandcurve, aes(x = emissions,
+                                    y = mwtp_A),
+            color = "darkgreen")+
+  geom_line(data = carbon_emissions_demandcurve, aes(x = emissions,
+                                    y = mwtp_B),
+            color = "darkblue")+
+  geom_line(data = carbon_emissions_demandcurve, aes(x = emissions,
+                                    y = mwtp_C),
+            color = "darkred")+
+  geom_line(data = carbon_emissions_demandcurve, aes(x = emissions,
+                                    y = mwtp_D),
+            color = "darksalmon")+
+  theme_light() +
+  labs(title = "Demand Curve for Carbon Emmissions for 4 Sectors",
+       x = "Emissions (tons)",
+       y = "$/ton") +
+theme(plot.title = element_text(size = 14,
+                                  face = 4,
+        hjust = 0.5)) +
+  theme(axis.title.y = element_text(size = 12)) 
+```
+
